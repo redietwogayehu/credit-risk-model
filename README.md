@@ -146,7 +146,7 @@ Explainability outputs
 Stability checks
 ⚙️ Setup Instructions
 1. Clone Repository
-git clone https://github.com/your-username/credit-risk-model.git
+git clone https://github.com/redietwogayehu/credit-risk-model
 cd credit-risk-model
 2. Create Virtual Environment
 python -m venv venv
