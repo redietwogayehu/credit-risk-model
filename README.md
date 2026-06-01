@@ -1,48 +1,65 @@
-Credit Risk Probability Model for Alternative Data
- Project Overview
+# Credit Risk Probability Model for Alternative Data
 
-This project develops a credit risk probability model for a Buy-Now-Pay-Later (BNPL) use case in partnership between Bati Bank and an eCommerce platform.
+## 📌 Project Overview
 
-The goal is to estimate the likelihood that a customer belongs to a high-risk segment using transactional behavioral data, since no explicit loan default label exists.
+This project develops a **credit risk probability modeling system** for a Buy-Now-Pay-Later (BNPL) use case in collaboration between **Bati Bank** and an eCommerce platform.
 
-The solution is built using:
+The objective is to estimate the probability that a customer belongs to a **high-risk segment** using transactional behavioral data. The dataset does not contain explicit loan default labels, requiring **behavioral proxy modeling**.
 
-Exploratory Data Analysis (EDA)
-Behavioral feature engineering (RFM-based logic)
-Proxy target generation (K-Means clustering)
-Machine learning models for credit scoring
- Business Context
+The system includes:
 
-Traditional credit scoring systems rely on historical repayment/default labels.
-However, this dataset does not contain direct default outcomes.
+- Exploratory Data Analysis (EDA)
+- Feature engineering using behavioral signals
+- RFM-based proxy target generation using clustering
+- Machine learning models for credit risk prediction
+- Model evaluation using standard metrics
 
-To solve this:
+---
 
-A proxy target variable is engineered using customer behavior
-Risk is inferred from Recency, Frequency, and Monetary (RFM) patterns
-The final output is a risk probability score for BNPL decisioning
+## 🏦 Business Context
 
-This supports:
+Traditional credit scoring relies on historical repayment/default labels.
 
-Loan approval decisions
-Credit limit assignment
-Risk-based pricing
-Automated customer onboarding
- Dataset Information
-Source
+In this project:
 
-This project uses the Xente Fraud Detection Dataset, originally released for a data science challenge.
+- No default labels exist
+- Risk is inferred from transaction behavior
+- RFM (Recency, Frequency, Monetary) is used for segmentation
 
-Dataset: Xente Fraud Detection Challenge
-Source: Kaggle
-https://www.kaggle.com/datasets/ealaxi/paysim1 (or your actual dataset link if different — replace if needed)
-Description:
-Transaction-level mobile money data including customer transactions, product categories, channels, and fraud labels.
-Notes
-No direct credit default label exists
-Fraud label is not used as a credit risk target
-Data is used strictly for behavioral modeling
- Project Structure
+### Business Objectives
+
+- Reduce credit default risk
+- Improve BNPL decisioning
+- Optimize credit limits and pricing
+- Automate customer risk classification
+
+Final output: **risk probability score per customer**
+
+---
+
+## 📊 Dataset Information
+
+### Source
+
+- Dataset: Xente Fraud Detection Dataset
+- Origin: Kaggle Data Science Challenge
+- Link: https://www.kaggle.com/datasets/ealaxi/paysim1 *(replace if needed)*
+
+### Description
+
+Includes anonymized transaction data:
+
+- Customer IDs
+- Transaction amounts and values
+- Product categories
+- Channel information
+- Fraud labels (NOT used for target)
+
+> ⚠️ No loan default labels exist. Fraud labels are excluded from modeling.
+
+---
+
+## 📁 Project Structure
 credit-risk-model/
 ├── .github/workflows/ci.yml
 ├── data/
@@ -65,29 +82,35 @@ credit-risk-model/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+
+
 ⚙️ Setup Instructions
 1. Clone Repository
 git clone https://github.com/your-username/credit-risk-model.git
 cd credit-risk-model
 2. Create Virtual Environment
 python -m venv venv
-source venv/bin/activate  # Mac/Linux
-venv\Scripts\activate     # Windows
+
+Activate environment:
+
+Mac/Linux
+
+source venv/bin/activate
+
+Windows
+
+venv\Scripts\activate
 3. Install Dependencies
 pip install -r requirements.txt
- How to Run EDA
-
-Run the Jupyter notebook:
-
+📌 How to Run EDA
+Option 1: Run Notebook
 jupyter notebook notebooks/eda.ipynb
-
-Or use modular EDA functions:
-
+Option 2: Run Modular Code
 from src.data_processing import load_data, run_basic_eda
 
 df = load_data("data/raw/data.csv")
 run_basic_eda(df)
- Key Concepts
+🧠 Key Concepts
 1. Proxy Target Creation
 
 Since no default label exists:
@@ -109,26 +132,27 @@ Precision
 Recall
 F1-score
 ROC-AUC
- EDA Highlights
-95,662 transactions, 16 features
+📈 EDA Highlights
+95,662 transaction records, 16 features
 Highly imbalanced fraud distribution (~0.2%)
 Strong skewness in Amount and Value
 Significant outliers in financial variables
 Strong behavioral signals in ProductCategory and ChannelId
-Temporal patterns observed in transaction timestamps
- Next Steps
+Temporal patterns in TransactionStartTime
+🚧 Next Steps
 Feature engineering pipeline (src/data_processing.py)
 RFM-based proxy target generation
 Model training + MLflow tracking
 API deployment using FastAPI
 Docker containerization
 CI/CD pipeline with GitHub Actions
- Code Quality & Best Practices
+🧪 Code Quality & Best Practices
 
 This project follows:
 
 Modular Python structure (src/)
-Reusable functions for preprocessing
+Reusable preprocessing functions
 Separation of EDA and production code
-Git best practices (.gitignore, branches)
+Git best practices (.gitignore, branching)
 Reproducible ML pipeline design
+
