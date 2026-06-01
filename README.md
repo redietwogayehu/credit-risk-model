@@ -100,9 +100,12 @@ source venv/bin/activate
 Windows
 
 venv\Scripts\activate
+
 3. Install Dependencies
 pip install -r requirements.txt
+
 📌 How to Run EDA
+
 Option 1: Run Notebook
 jupyter notebook notebooks/eda.ipynb
 Option 2: Run Modular Code
@@ -111,6 +114,7 @@ from src.data_processing import load_data, run_basic_eda
 df = load_data("data/raw/data.csv")
 run_basic_eda(df)
 🧠 Key Concepts
+
 1. Proxy Target Creation
 
 Since no default label exists:
@@ -132,20 +136,25 @@ Precision
 Recall
 F1-score
 ROC-AUC
+
 📈 EDA Highlights
+
 95,662 transaction records, 16 features
 Highly imbalanced fraud distribution (~0.2%)
 Strong skewness in Amount and Value
 Significant outliers in financial variables
 Strong behavioral signals in ProductCategory and ChannelId
 Temporal patterns in TransactionStartTime
+
 🚧 Next Steps
+
 Feature engineering pipeline (src/data_processing.py)
 RFM-based proxy target generation
 Model training + MLflow tracking
 API deployment using FastAPI
 Docker containerization
 CI/CD pipeline with GitHub Actions
+
 🧪 Code Quality & Best Practices
 
 This project follows:
