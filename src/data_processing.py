@@ -30,6 +30,11 @@ def extract_datetime_features(
     """
 
     df = df.copy()
+
+# normalize monetary values (important for RFM + clustering)
+    if "Amount" in df.columns:
+        df["Amount"] = df["Amount"].abs()
+
     df[datetime_col] = pd.to_datetime(df[datetime_col])
 
     df["transaction_year"] = df[datetime_col].dt.year
@@ -56,7 +61,7 @@ def create_aggregate_features(df: pd.DataFrame) -> pd.DataFrame:
         std_transaction_amount=("Amount", "std")
     ).reset_index()
 
-    return agg_df
+    return agg_df.fillna(0)
 
 
 # =========================================================
@@ -125,6 +130,22 @@ def process_data(df: pd.DataFrame):
 
     pipeline = build_pipeline()
 
-    processed = pipelinegit .fit_transform(df)
+    processed = pipeline.fit_transform(df)
 
-    return processed, pipeline
+    # Convert to DataFrame (IMPORTANT for Task 5)
+    processed_df = pd.DataFrame(
+        processed.toarray() if hasattr(processed, "toarray") else processed
+    )
+
+    return processed_df, pipeline
+    
+def create_customer_dataset(df: pd.DataFrame):
+
+    return df.groupby("CustomerId").agg(
+        total_transaction_amount=("Amount", "sum"),
+        avg_transaction_amount=("Amount", "mean"),
+        transaction_count=("Amount", "count"),
+        std_transaction_amount=("Amount", "std")
+    ).reset_index().fillna(0)
+
+
