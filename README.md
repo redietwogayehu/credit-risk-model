@@ -1,54 +1,140 @@
 Credit Risk Probability Model for Alternative Data
-by rediet wogayehu
 
-📌 Project Overview
+by Rediet Wogayehu
 
-This project builds a credit risk probability modeling system for a Buy-Now-Pay-Later (BNPL) use case in collaboration between Bati Bank and an eCommerce platform.
+📌 Overview
 
-The objective is to estimate the probability that a customer belongs to a high-risk segment using transactional behavioral data. Since no explicit default labels exist, the system uses proxy target modeling based on customer behavior.
+This project builds a credit risk scoring system for a Buy-Now-Pay-Later (BNPL) use case in collaboration with Bati Bank and an eCommerce platform.
 
-The system includes:
+Since no historical credit default labels exist, a proxy risk model is built using customer transactional behavior.
 
-Exploratory Data Analysis (EDA)
-Feature engineering using behavioral signals
-RFM-based proxy target generation using clustering
-Machine learning models for credit risk prediction
-Model evaluation using classification metrics
-MLflow experiment tracking
-FastAPI deployment for inference
+The system outputs a risk probability score (0–1) for each customer to support credit decisions.
+
+🎯 Objectives
+Build a behavioral credit risk model without default labels
+Predict probability of customer financial risk
+Support BNPL approval decisions
+Enable dynamic credit limit assignment
+Deploy a real-time scoring API
 🏦 Business Context
 
-Traditional credit scoring systems rely on historical repayment/default labels. In this project:
+Traditional credit scoring depends on repayment history. In this case:
 
-No default labels are available
+No credit bureau data is available
 Risk is inferred from transaction behavior
-RFM (Recency, Frequency, Monetary) is used for behavioral segmentation
-Business Objectives
-Reduce credit default risk
-Improve BNPL decisioning
-Optimize credit limits and pricing strategies
-Automate customer risk classification
+RFM (Recency, Frequency, Monetary) is used for segmentation
+⚖️ Regulatory Requirements (Basel II)
+Models must be interpretable
+Feature engineering must be traceable
+Decisions must be explainable to auditors and risk teams
+📊 Dataset
 
-📌 Final output: risk probability score per customer (proxy credit risk score)
-
-⚠️ Regulatory & Modeling Constraints (Basel II Context)
-
-Financial institutions must ensure:
-
-Model interpretability is required for regulatory compliance
-Feature engineering must be documented and traceable
-Model behavior must be explainable to auditors
-
-👉 Interpretability is a hard constraint, not optional.
-
-📊 Dataset Information
-Dataset: Xente Fraud Detection Dataset
-Source: Kaggle
+Source: Kaggle (Xente Transaction Dataset)
 Link: https://www.kaggle.com/datasets/ealaxi/paysim1
-Description
+
+Contains:
+
 Customer transactions
-Amount, value, category, channel, timestamps
-Fraud labels exist but are NOT used
+Amounts and categories
+Time-based features
+
+⚠️ Fraud labels are NOT used.
+
+🧠 Approach
+1. Proxy Target Creation (RFM + KMeans)
+Recency → inactivity
+Frequency → transaction behavior
+Monetary → spending level
+KMeans clustering (k=3)
+Least active cluster → high risk label
+2. Feature Engineering
+
+Customer-level features:
+
+total_transaction_amount
+avg_transaction_amount
+transaction_count
+std_transaction_amount
+
+Time features:
+
+hour, day, month, year
+3. Feature Strength (WoE / IV)
+Feature	IV Score	Interpretation
+transaction_count	0.63	Strong
+total_transaction_amount	0.73	Strong
+avg_transaction_amount	0.73	Strong
+
+👉 Features show strong predictive power.
+
+🤖 Model Training
+Model	Purpose
+Logistic Regression	Baseline (interpretable)
+Random Forest (Tuned)	Best performing model
+Hyperparameter tuning using RandomizedSearchCV
+Final selection based on ROC-AUC
+📊 Model Evaluation
+
+Metrics:
+
+Accuracy
+Precision
+Recall
+F1-score
+ROC-AUC (primary metric)
+📌 Figure 1 — Model Performance Comparison
+
+reports/figures/model_comparison.png
+
+👉 Random Forest outperforms Logistic Regression (ROC-AUC ≈ 0.77)
+
+🧪 MLflow Tracking
+
+Tracked:
+
+Model parameters
+Metrics
+Artifacts
+Experiment runs
+📌 Model Registry Update (IMPORTANT IMPROVEMENT)
+
+The final model is now registered using MLflow Model Registry:
+
+Logistic Regression → Version 1
+Random Forest → Version 2 (Best Model)
+
+👉 Random Forest is automatically promoted as the best-performing model based on ROC-AUC.
+
+📌 Figure 2 — MLflow Experiment Tracking UI
+
+reports/figures/mlflow_ui.png
+
+🚀 API Deployment (FastAPI)
+Endpoint
+
+POST /predict
+
+Input
+{
+  "total_transaction_amount": 10000,
+  "avg_transaction_amount": 2000,
+  "transaction_count": 5,
+  "std_transaction_amount": 500
+}
+Output
+{
+  "risk_probability": 0.87,
+  "is_high_risk": 1
+}
+Run API
+uvicorn src.api.main:app --reload
+📌 Figure 3 — FastAPI Swagger UI
+
+reports/figures/api_swagger.png
+
+Open:
+http://127.0.0.1:8000/docs
+
 📁 Project Structure
 credit-risk-model/
 │
@@ -56,491 +142,37 @@ credit-risk-model/
 ├── tests/
 ├── data/
 ├── notebooks/
-├── reports/
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
-🧠 Modeling Approach
-1. Proxy Target Creation (RFM + KMeans)
-Recency → inactivity
-Frequency → engagement
-Monetary → spending behavior
-KMeans clusters customers
-Least engaged cluster → high risk label
-
-📌 Output is a risk propensity score
-
-2. Feature Engineering
-Customer-level aggregation:
-Total transaction amount
-Average transaction amount
-Transaction count
-Std deviation
-Time features:
-Year, Month, Day, Hour
-3. Models Used
-Model	Purpose
-Logistic Regression	Baseline (interpretable)
-Random Forest	Non-linear benchmark
-4. Evaluation Metrics
-Accuracy
-Precision
-Recall
-F1-score
-ROC-AUC (primary)
-🧪 MLflow Tracking
-Experiment comparison
-Metric logging
-Model artifact storage
-Best model selection based on ROC-AUC
-🚀 API Deployment (FastAPI)
-Endpoint
-POST /predict
-Input Example
-{
-  "total_transaction_amount": 10000,
-  "avg_transaction_amount": 2000,
-  "transaction_count": 5,
-  "std_transaction_amount": 500
-}
-Response Example
-{
-  "risk_probability": 0.87,
-  "is_high_risk": 1
-}
-Run API
-uvicorn src.api.main:app --reload
-
-Open:
-
-http://127.0.0.1:8000/docs
-📈 Key Results
-~95,000 transactions
-Strong skew in financial features
-Clear customer segmentation via RFM
-Random Forest outperforms Logistic Regression
-ROC-AUC ≈ 0.77
-🧪 Engineering Practices
-Modular Python structure (src/)
-Unit testing with pytest
-MLflow experiment tracking
-Docker-ready setup
-CI/CD pipeline (GitHub Actions)
-🚀 Final Summary
-
-This project demonstrates an end-to-end credit risk modeling pipeline:
-
-Data engineering
-Proxy target creation
-Machine learning training
-Model evaluation
-MLflow trackingCredit Risk Probability Model for Alternative Data
-📌 Project Overview
-
-This project builds a credit risk probability modeling system for a Buy-Now-Pay-Later (BNPL) use case in collaboration between Bati Bank and an eCommerce platform.
-
-The objective is to estimate the probability that a customer belongs to a high-risk segment using transactional behavioral data. Since no explicit default labels exist, the system uses proxy target modeling based on customer behavior.
-
-The system includes:
-
-Exploratory Data Analysis (EDA)
-Feature engineering using behavioral signals
-RFM-based proxy target generation using clustering
-Machine learning models for credit risk prediction
-Model evaluation using classification metrics
-MLflow experiment tracking
-FastAPI deployment for inference
-🏦 Business Context
-
-Traditional credit scoring systems rely on historical repayment/default labels. In this project:
-
-No default labels are available
-Risk is inferred from transaction behavior
-RFM (Recency, Frequency, Monetary) is used for behavioral segmentation
-Business Objectives
-Reduce credit default risk
-Improve BNPL decisioning
-Optimize credit limits and pricing strategies
-Automate customer risk classification
-
-📌 Final output: risk probability score per customer (proxy credit risk score)
-
-⚠️ Regulatory & Modeling Constraints (Basel II Context)
-
-Financial institutions must ensure:
-
-Model interpretability is required for regulatory compliance
-Feature engineering must be documented and traceable
-Model behavior must be explainable to auditors
-
-👉 Interpretability is a hard constraint, not optional.
-
-📊 Dataset Information
-Dataset: Xente Fraud Detection Dataset
-Source: Kaggle
-Link: https://www.kaggle.com/datasets/ealaxi/paysim1
-Description
-Customer transactions
-Amount, value, category, channel, timestamps
-Fraud labels exist but are NOT used
-📁 Project Structure
-credit-risk-model/
+├── reports/figures/
+│   ├── model_comparison.png
+│   ├── mlflow_ui.png
+│   ├── api_swagger.png
 │
-├── src/
-├── tests/
-├── data/
-├── notebooks/
-├── reports/
+├── model/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
 └── README.md
-🧠 Modeling Approach
-1. Proxy Target Creation (RFM + KMeans)
-Recency → inactivity
-Frequency → engagement
-Monetary → spending behavior
-KMeans clusters customers
-Least engaged cluster → high risk label
-
-📌 Output is a risk propensity score
-
-2. Feature Engineering
-Customer-level aggregation:
-Total transaction amount
-Average transaction amount
-Transaction count
-Std deviation
-Time features:
-Year, Month, Day, Hour
-3. Models Used
-Model	Purpose
-Logistic Regression	Baseline (interpretable)
-Random Forest	Non-linear benchmark
-4. Evaluation Metrics
-Accuracy
-Precision
-Recall
-F1-score
-ROC-AUC (primary)
-🧪 MLflow Tracking
-Experiment comparison
-Metric logging
-Model artifact storage
-Best model selection based on ROC-AUC
-🚀 API Deployment (FastAPI)
-Endpoint
-POST /predict
-Input Example
-{
-  "total_transaction_amount": 10000,
-  "avg_transaction_amount": 2000,
-  "transaction_count": 5,
-  "std_transaction_amount": 500
-}
-Response Example
-{
-  "risk_probability": 0.87,
-  "is_high_risk": 1
-}
-Run API
-uvicorn src.api.main:app --reload
-
-Open:
-
-http://127.0.0.1:8000/docs
 📈 Key Results
-~95,000 transactions
-Strong skew in financial features
-Clear customer segmentation via RFM
-Random Forest outperforms Logistic Regression
+~95,000 transactions processed
+Strong behavioral clustering patterns
+Clear RFM segmentation
+Random Forest best model
 ROC-AUC ≈ 0.77
-🧪 Engineering Practices
-Modular Python structure (src/)
-Unit testing with pytest
-MLflow experiment tracking
-Docker-ready setup
-CI/CD pipeline (GitHub Actions)
-🚀 Final Summary
-
-This project demonstrates an end-to-end credit risk modeling pipeline:
-
-Data engineering
-Proxy target creation
-Machine learning training
-Model evaluation
-MLflow tracking
-Credit Risk Probability Model for Alternative Data
-📌 Project Overview
-
-This project builds a credit risk probability modeling system for a Buy-Now-Pay-Later (BNPL) use case in collaboration between Bati Bank and an eCommerce platform.
-
-The objective is to estimate the probability that a customer belongs to a high-risk segment using transactional behavioral data. Since no explicit default labels exist, the system uses proxy target modeling based on customer behavior.
-
-The system includes:
-
-Exploratory Data Analysis (EDA)
-Feature engineering using behavioral signals
-RFM-based proxy target generation using clustering
-Machine learning models for credit risk prediction
-Model evaluation using classification metrics
-MLflow experiment tracking
-FastAPI deployment for inference
-🏦 Business Context
-
-Traditional credit scoring systems rely on historical repayment/default labels. In this project:
-
-No default labels are available
-Risk is inferred from transaction behavior
-RFM (Recency, Frequency, Monetary) is used for behavioral segmentation
-Business Objectives
-Reduce credit default risk
-Improve BNPL decisioning
-Optimize credit limits and pricing strategies
-Automate customer risk classification
-
-📌 Final output: risk probability score per customer (proxy credit risk score)
-
-⚠️ Regulatory & Modeling Constraints (Basel II Context)
-
-Financial institutions must ensure:
-
-Model interpretability is required for regulatory compliance
-Feature engineering must be documented and traceable
-Model behavior must be explainable to auditors
-
-👉 Interpretability is a hard constraint, not optional.
-
-📊 Dataset Information
-Dataset: Xente Fraud Detection Dataset
-Source: Kaggle
-Link: https://www.kaggle.com/datasets/ealaxi/paysim1
-Description
-Customer transactions
-Amount, value, category, channel, timestamps
-Fraud labels exist but are NOT used
-📁 Project Structure
-credit-risk-model/
-│
-├── src/
-├── tests/
-├── data/
-├── notebooks/
-├── reports/
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
-🧠 Modeling Approach
-1. Proxy Target Creation (RFM + KMeans)
-Recency → inactivity
-Frequency → engagement
-Monetary → spending behavior
-KMeans clusters customers
-Least engaged cluster → high risk label
-
-📌 Output is a risk propensity score
-
-2. Feature Engineering
-Customer-level aggregation:
-Total transaction amount
-Average transaction amount
-Transaction count
-Std deviation
-Time features:
-Year, Month, Day, Hour
-3. Models Used
-Model	Purpose
-Logistic Regression	Baseline (interpretable)
-Random Forest	Non-linear benchmark
-4. Evaluation Metrics
-Accuracy
-Precision
-Recall
-F1-score
-ROC-AUC (primary)
-🧪 MLflow Tracking
-Experiment comparison
-Metric logging
-Model artifact storage
-Best model selection based on ROC-AUC
-🚀 API Deployment (FastAPI)
-Endpoint
-POST /predict
-Input Example
-{
-  "total_transaction_amount": 10000,
-  "avg_transaction_amount": 2000,
-  "transaction_count": 5,
-  "std_transaction_amount": 500
-}
-Response Example
-{
-  "risk_probability": 0.87,
-  "is_high_risk": 1
-}
-Run API
+MLflow Model Registry successfully implemented (Versioned Models)
+⚠️ Limitations
+Proxy target ≠ real default risk
+No credit bureau data
+KMeans introduces labeling bias
+Possible class imbalance effects
+Model generalization risk on unseen populations
+🚀 Future Improvements
+Add SHAP explainability
+Add real credit repayment data
+Improve model calibration
+Add drift monitoring
+Enhance MLflow Model Registry with production staging
+🔁 Reproducibility
+pip install -r requirements.txt
+python -m src.train
 uvicorn src.api.main:app --reload
-
-Open:
-
-http://127.0.0.1:8000/docs
-📈 Key Results
-~95,000 transactions
-Strong skew in financial features
-Clear customer segmentation via RFM
-Random Forest outperforms Logistic Regression
-ROC-AUC ≈ 0.77
-🧪 Engineering Practices
-Modular Python structure (src/)
-Unit testing with pytest
-MLflow experiment tracking
-Docker-ready setup
-CI/CD pipeline (GitHub Actions)
-🚀 Final Summary
-
-This project demonstrates an end-to-end credit risk modeling pipeline:
-
-Data engineering
-Proxy target creation
-Machine learning training
-Model evaluation
-MLflow tracking
-Credit Risk Probability Model for Alternative Data
-📌 Project Overview
-
-This project builds a credit risk probability modeling system for a Buy-Now-Pay-Later (BNPL) use case in collaboration between Bati Bank and an eCommerce platform.
-
-The objective is to estimate the probability that a customer belongs to a high-risk segment using transactional behavioral data. Since no explicit default labels exist, the system uses proxy target modeling based on customer behavior.
-
-The system includes:
-
-Exploratory Data Analysis (EDA)
-Feature engineering using behavioral signals
-RFM-based proxy target generation using clustering
-Machine learning models for credit risk prediction
-Model evaluation using classification metrics
-MLflow experiment tracking
-FastAPI deployment for inference
-🏦 Business Context
-
-Traditional credit scoring systems rely on historical repayment/default labels. In this project:
-
-No default labels are available
-Risk is inferred from transaction behavior
-RFM (Recency, Frequency, Monetary) is used for behavioral segmentation
-Business Objectives
-Reduce credit default risk
-Improve BNPL decisioning
-Optimize credit limits and pricing strategies
-Automate customer risk classification
-
-📌 Final output: risk probability score per customer (proxy credit risk score)
-
-⚠️ Regulatory & Modeling Constraints (Basel II Context)
-
-Financial institutions must ensure:
-
-Model interpretability is required for regulatory compliance
-Feature engineering must be documented and traceable
-Model behavior must be explainable to auditors
-
-👉 Interpretability is a hard constraint, not optional.
-
-📊 Dataset Information
-Dataset: Xente Fraud Detection Dataset
-Source: Kaggle
-Link: https://www.kaggle.com/datasets/ealaxi/paysim1
-Description
-Customer transactions
-Amount, value, category, channel, timestamps
-Fraud labels exist but are NOT used
-📁 Project Structure
-credit-risk-model/
-│
-├── src/
-├── tests/
-├── data/
-├── notebooks/
-├── reports/
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── README.md
-🧠 Modeling Approach
-1. Proxy Target Creation (RFM + KMeans)
-Recency → inactivity
-Frequency → engagement
-Monetary → spending behavior
-KMeans clusters customers
-Least engaged cluster → high risk label
-
-📌 Output is a risk propensity score
-
-2. Feature Engineering
-Customer-level aggregation:
-Total transaction amount
-Average transaction amount
-Transaction count
-Std deviation
-Time features:
-Year, Month, Day, Hour
-3. Models Used
-Model	Purpose
-Logistic Regression	Baseline (interpretable)
-Random Forest	Non-linear benchmark
-4. Evaluation Metrics
-Accuracy
-Precision
-Recall
-F1-score
-ROC-AUC (primary)
-🧪 MLflow Tracking
-Experiment comparison
-Metric logging
-Model artifact storage
-Best model selection based on ROC-AUC
-🚀 API Deployment (FastAPI)
-Endpoint
-POST /predict
-Input Example
-{
-  "total_transaction_amount": 10000,
-  "avg_transaction_amount": 2000,
-  "transaction_count": 5,
-  "std_transaction_amount": 500
-}
-Response Example
-{
-  "risk_probability": 0.87,
-  "is_high_risk": 1
-}
-Run API
-uvicorn src.api.main:app --reload
-
-Open:
-
-http://127.0.0.1:8000/docs
-📈 Key Results
-~95,000 transactions
-Strong skew in financial features
-Clear customer segmentation via RFM
-Random Forest outperforms Logistic Regression
-ROC-AUC ≈ 0.77
-🧪 Engineering Practices
-Modular Python structure (src/)
-Unit testing with pytest
-MLflow experiment tracking
-Docker-ready setup
-CI/CD pipeline (GitHub Actions)
-🚀 Final Summary
-
-This project demonstrates an end-to-end credit risk modeling pipeline:
-
-Data engineering
-Proxy target creation
-Machine learning training
-Model evaluation
-MLflow tracking
-FastAPI deployment
+🧠 FINAL NOTE
