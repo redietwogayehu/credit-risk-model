@@ -1,57 +1,65 @@
 from fastapi import FastAPI
 import pandas as pd
-import joblib
+import mlflow.pyfunc
 
 from src.api.pydantic_models import CustomerData
 
 
-app = FastAPI(
-    title="Credit Risk API"
+# =========================
+# APP
+# =========================
+app = FastAPI(title="Credit Risk API")
+
+
+# =========================
+# LOAD MODEL FROM MLFLOW REGISTRY
+# =========================
+MODEL_NAME = "credit_risk_model"
+
+model = mlflow.pyfunc.load_model(
+    model_uri=f"models:/{MODEL_NAME}/latest"
 )
 
 
-model = joblib.load("model.pkl")
-
-
+# =========================
+# HEALTH CHECK
+# =========================
 @app.get("/")
 def home():
-
     return {
-        "message": "Credit Risk API Running"
+        "message": "Credit Risk API Running (MLflow Registry Model)"
     }
 
 
+# =========================
+# PREDICT ENDPOINT
+# =========================
 @app.post("/predict")
 def predict(data: CustomerData):
 
-    input_df = pd.DataFrame(
-        [{
-            "total_transaction_amount":
-                data.total_transaction_amount,
+    input_df = pd.DataFrame([[  
+        data.transaction_count,
+        data.total_transaction_amount,
+        data.avg_transaction_amount,
+        data.std_transaction_amount
+    ]], columns=[
+        "transaction_count",
+        "total_transaction_amount",
+        "avg_transaction_amount",
+        "std_transaction_amount"
+    ])
 
-            "avg_transaction_amount":
-                data.avg_transaction_amount,
+    try:
+        probability = model.predict(input_df)[0]
 
-            "transaction_count":
-                data.transaction_count,
+        prediction = int(probability > 0.30)
 
-            "std_transaction_amount":
-                data.std_transaction_amount
-        }]
-    )
+        return {
+            "risk_probability": float(probability),
+            "is_high_risk": prediction
+        }
 
-    probability = model.predict_proba(
-        input_df
-    )[0][1]
-
-    prediction = int(
-        probability > 0.30
-    )
-
-    return {
-        "risk_probability":
-            float(probability),
-
-        "is_high_risk":
-            prediction
-    }
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
