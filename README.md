@@ -1,8 +1,8 @@
-Credit Risk Probability Model for Alternative Data
+# Credit Risk Probability Model for Alternative Data
 
-by Rediet Wogayehu
+### by Rediet Wogayehu
 
-📌 Overview
+## 📌 Overview
 
 This project builds a credit risk scoring system for a Buy-Now-Pay-Later (BNPL) use case in collaboration with Bati Bank and an eCommerce platform.
 
@@ -10,169 +10,281 @@ Since no historical credit default labels exist, a proxy risk model is built usi
 
 The system outputs a risk probability score (0–1) for each customer to support credit decisions.
 
-🎯 Objectives
-Build a behavioral credit risk model without default labels
-Predict probability of customer financial risk
-Support BNPL approval decisions
-Enable dynamic credit limit assignment
-Deploy a real-time scoring API
-🏦 Business Context
+---
+
+## 🎯 Objectives
+
+* Build a behavioral credit risk model without default labels
+* Predict probability of customer financial risk
+* Support BNPL approval decisions
+* Enable dynamic credit limit assignment
+* Deploy a real-time scoring API
+
+---
+
+## 🏦 Business Context
 
 Traditional credit scoring depends on repayment history. In this case:
 
-No credit bureau data is available
-Risk is inferred from transaction behavior
-RFM (Recency, Frequency, Monetary) is used for segmentation
-⚖️ Regulatory Requirements (Basel II)
-Models must be interpretable
-Feature engineering must be traceable
-Decisions must be explainable to auditors and risk teams
-📊 Dataset
+* No credit bureau data is available
+* Risk is inferred from transaction behavior
+* RFM (Recency, Frequency, Monetary) is used for segmentation
 
-Source: Kaggle (Xente Transaction Dataset)
-Link: https://www.kaggle.com/datasets/ealaxi/paysim1
+---
+
+## ⚖️ Regulatory Requirements (Basel II)
+
+* Models must be interpretable
+* Feature engineering must be traceable
+* Decisions must be explainable to auditors and risk teams
+
+To satisfy these requirements:
+
+* Logistic Regression was used as an interpretable baseline
+* MLflow provides experiment tracking and governance
+* Feature engineering decisions are documented and reproducible
+
+---
+
+## 📊 Dataset
+
+**Source:** Kaggle (Xente Transaction Dataset)
 
 Contains:
 
-Customer transactions
-Amounts and categories
-Time-based features
+* Customer transactions
+* Transaction amounts and categories
+* Time-based behavioral information
 
-⚠️ Fraud labels are NOT used.
+⚠️ Fraud labels were not used for model training.
 
-🧠 Approach
-1. Proxy Target Creation (RFM + KMeans)
-Recency → inactivity
-Frequency → transaction behavior
-Monetary → spending level
-KMeans clustering (k=3)
-Least active cluster → high risk label
-2. Feature Engineering
+---
+
+## 🧠 Approach
+
+### 1. Proxy Target Creation (RFM + KMeans)
+
+* Recency → inactivity level
+* Frequency → customer engagement
+* Monetary → spending behavior
+* KMeans clustering (k = 3)
+* Least active customer cluster labeled as high risk
+
+The resulting target variable (`is_high_risk`) acts as a proxy risk indicator rather than a true default label.
+
+---
+
+### 2. Feature Engineering
 
 Customer-level features:
 
-total_transaction_amount
-avg_transaction_amount
-transaction_count
-std_transaction_amount
+* total_transaction_amount
+* avg_transaction_amount
+* transaction_count
+* std_transaction_amount
 
 Time features:
 
-hour, day, month, year
-3. Feature Strength (WoE / IV)
-Feature	IV Score	Interpretation
-transaction_count	0.63	Strong
-total_transaction_amount	0.73	Strong
-avg_transaction_amount	0.73	Strong
+* hour
+* day
+* month
+* year
 
-👉 Features show strong predictive power.
+---
 
-🤖 Model Training
-Model	Purpose
-Logistic Regression	Baseline (interpretable)
-Random Forest (Tuned)	Best performing model
-Hyperparameter tuning using RandomizedSearchCV
-Final selection based on ROC-AUC
-📊 Model Evaluation
+### 3. Feature Strength (WoE / IV Analysis)
 
-Metrics:
+Information Value (IV) was used to evaluate the predictive power of engineered features.
 
-Accuracy
-Precision
-Recall
-F1-score
-ROC-AUC (primary metric)
-📌 Figure 1 — Model Performance Comparison
+| Feature                  | IV Score |
+| ------------------------ | -------: |
+| transaction_count        |   0.8740 |
+| total_transaction_amount |   0.4847 |
+| avg_transaction_amount   |   0.1829 |
+| std_transaction_amount   |   0.4784 |
+
+Interpretation:
+
+* IV > 0.50 → Very Strong Predictor
+* 0.30–0.50 → Strong Predictor
+* 0.10–0.30 → Medium Predictor
+
+These results demonstrate that transaction behavior provides strong discriminatory power for identifying high-risk customers.
+
+Transaction count emerged as the strongest predictor.
+
+---
+
+## 🤖 Model Training
+
+| Model               | Purpose                  |
+| ------------------- | ------------------------ |
+| Logistic Regression | Baseline (interpretable) |
+| Random Forest       | Best performing model    |
+
+Hyperparameter tuning was performed using RandomizedSearchCV.
+
+Final model selection was based on ROC-AUC.
+
+---
+
+## 📊 Model Evaluation
+
+Metrics evaluated:
+
+* Accuracy
+* Precision
+* Recall
+* F1 Score
+* ROC-AUC
+
+### Figure 1 — Model Performance Comparison
 
 reports/figures/model_comparison.png
 
-👉 Random Forest outperforms Logistic Regression (ROC-AUC ≈ 0.77)
+Results:
 
-🧪 MLflow Tracking
+| Model               | ROC-AUC | F1 Score |
+| ------------------- | ------: | -------: |
+| Logistic Regression |  0.7523 |   0.6031 |
+| Random Forest       |  0.7940 |   0.6807 |
 
-Tracked:
+Random Forest achieved the strongest predictive performance and was selected as the production model.
 
-Model parameters
-Metrics
-Artifacts
-Experiment runs
-📌 Model Registry Update (IMPORTANT IMPROVEMENT)
+---
 
-The final model is now registered using MLflow Model Registry:
+## 🧪 MLflow Tracking
 
-Logistic Regression → Version 1
-Random Forest → Version 2 (Best Model)
+Tracked items:
 
-👉 Random Forest is automatically promoted as the best-performing model based on ROC-AUC.
+* Model parameters
+* Evaluation metrics
+* Artifacts
+* Experiment runs
+* Model versions
 
-📌 Figure 2 — MLflow Experiment Tracking UI
+### MLflow Model Registry
+
+The final model is automatically registered in MLflow Model Registry.
+
+Current versions:
+
+* Logistic Regression → Version 3
+* Random Forest → Version 4
+
+This provides model governance, version control, and deployment traceability.
+
+### Figure 2 — MLflow Experiment Tracking UI
 
 reports/figures/mlflow_ui.png
 
-🚀 API Deployment (FastAPI)
-Endpoint
+---
+
+## 🚀 API Deployment (FastAPI)
+
+### Endpoint
 
 POST /predict
 
-Input
+### Input Example
+
 {
-  "total_transaction_amount": 10000,
-  "avg_transaction_amount": 2000,
-  "transaction_count": 5,
-  "std_transaction_amount": 500
+"total_transaction_amount": 10000,
+"avg_transaction_amount": 2000,
+"transaction_count": 5,
+"std_transaction_amount": 500
 }
-Output
+
+### Output Example
+
 {
-  "risk_probability": 0.87,
-  "is_high_risk": 1
+"risk_probability": 0.87,
+"is_high_risk": 1
 }
-Run API
+
+### Run API
+
 uvicorn src.api.main:app --reload
-📌 Figure 3 — FastAPI Swagger UI
+
+### Figure 3 — FastAPI Swagger UI
 
 reports/figures/api_swagger.png
 
 Open:
+
 http://127.0.0.1:8000/docs
 
-📁 Project Structure
+---
+
+## 📁 Project Structure
+
 credit-risk-model/
-│
+
 ├── src/
+
 ├── tests/
+
 ├── data/
+
 ├── notebooks/
+
 ├── reports/figures/
-│   ├── model_comparison.png
-│   ├── mlflow_ui.png
-│   ├── api_swagger.png
-│
+
 ├── model/
+
 ├── Dockerfile
+
 ├── docker-compose.yml
+
 ├── requirements.txt
+
 └── README.md
-📈 Key Results
-~95,000 transactions processed
-Strong behavioral clustering patterns
-Clear RFM segmentation
-Random Forest best model
-ROC-AUC ≈ 0.77
-MLflow Model Registry successfully implemented (Versioned Models)
-⚠️ Limitations
-Proxy target ≠ real default risk
-No credit bureau data
-KMeans introduces labeling bias
-Possible class imbalance effects
-Model generalization risk on unseen populations
-🚀 Future Improvements
-Add SHAP explainability
-Add real credit repayment data
-Improve model calibration
-Add drift monitoring
-Enhance MLflow Model Registry with production staging
-🔁 Reproducibility
+
+---
+
+## 📈 Key Results
+
+* ~95,000 transactions processed
+* Strong behavioral clustering patterns identified
+* Clear customer segmentation using RFM
+* Information Value analysis confirms predictive feature strength
+* Random Forest selected as best model
+* ROC-AUC = 0.7940
+* F1 Score = 0.6807
+* MLflow Model Registry successfully implemented
+
+---
+
+## ⚠️ Limitations
+
+* Proxy target does not represent true default behavior
+* No credit bureau or repayment history available
+* KMeans clustering introduces labeling assumptions
+* Potential class imbalance effects
+* Risk of reduced performance on unseen customer populations
+
+---
+
+## 🚀 Future Improvements
+
+* Add SHAP explainability
+* Integrate real repayment/default data
+* Improve probability calibration
+* Implement model drift monitoring
+* Add automated promotion workflows in MLflow Registry
+
+---
+
+## 🔁 Reproducibility
+
 pip install -r requirements.txt
+
 python -m src.train
+
 uvicorn src.api.main:app --reload
-🧠 FINAL NOTE
+
+---
+
+## 🧠 Final Note
+
+This project demonstrates an end-to-end credit risk modeling workflow including behavioral feature engineering, proxy target creation, Information Value analysis, model training, hyperparameter tuning, MLflow experiment tracking, model registry integration, and FastAPI deployment.
