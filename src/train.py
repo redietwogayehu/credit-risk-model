@@ -16,12 +16,18 @@ from src.feature_selection import calculate_iv
 # =========================
 # LOAD DATA
 # =========================
-df = load_data("data/raw/data.csv")
+try:
+    df = load_data("data/raw/data.csv")
 
-features = create_customer_dataset(df)
-target = create_rfm_target(df)
+    features = create_customer_dataset(df)
+    target = create_rfm_target(df)
 
-data = features.merge(target, on="CustomerId")
+    data = features.merge(target, on="CustomerId")
+
+except Exception as e:
+    raise RuntimeError(
+        f"Failed during data loading or feature engineering: {e}"
+    )
 
 
 # =========================
@@ -171,26 +177,49 @@ print(f"Best ROC-AUC: {results[best_model_name]['roc_auc']:.4f}")
 # =========================
 # SAVE MODEL LOCALLY
 # =========================
-joblib.dump(best_model, "model/model.pkl")
+try:
+    joblib.dump(
+        best_model,
+        "model/model.pkl"
+    )
 
-print("Model saved successfully")
+    print("Model saved successfully")
+
+except Exception as e:
+    raise RuntimeError(
+        f"Failed to save model: {e}"
+    )
 
 
 # =========================
 # MLflow MODEL REGISTRY (EXPLICIT STEP)
 # =========================
-with mlflow.start_run(run_name="model_registry"):
+try:
 
-    mlflow.log_param("best_model", best_model_name)
-    mlflow.log_metric(
-        "best_roc_auc",
-        results[best_model_name]["roc_auc"]
+    with mlflow.start_run(run_name="model_registry"):
+
+        mlflow.log_param(
+            "best_model",
+            best_model_name
+        )
+
+        mlflow.log_metric(
+            "best_roc_auc",
+            results[best_model_name]["roc_auc"]
+        )
+
+        mlflow.sklearn.log_model(
+            sk_model=best_model,
+            name="model",
+            registered_model_name="credit_risk_model"
+        )
+
+    print(
+        "Model registered in MLflow Model Registry"
     )
 
-    mlflow.sklearn.log_model(
-        sk_model=best_model,
-        name="model",
-        registered_model_name="credit_risk_model"
-    )
+except Exception as e:
 
-print("Model registered in MLflow Model Registry")
+    raise RuntimeError(
+        f"Failed to register model in MLflow: {e}"
+    )
