@@ -1,24 +1,18 @@
 import joblib
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import pandas as pd
-import mlflow.pyfunc
 
 from src.api.pydantic_models import CustomerData
 
 
-# =========================
-# APP
-# =========================
 app = FastAPI(title="Credit Risk API")
 
 
 # =========================
-# LOAD MODEL FROM MLFLOW REGISTRY
+# LOAD MODEL
 # =========================
-MODEL_NAME = "credit_risk_model"
-
-model = joblib.load("model/model.pkl")  
+model = joblib.load("model/model.pkl")
 
 
 # =========================
@@ -27,38 +21,26 @@ model = joblib.load("model/model.pkl")
 @app.get("/")
 def home():
     return {
-        "message": "Credit Risk API Running (MLflow Registry Model)"
+        "message": "Credit Risk API Running"
     }
 
 
 # =========================
-# PREDICT ENDPOINT
+# PREDICT
 # =========================
 @app.post("/predict")
 def predict(data: CustomerData):
 
-    if data.transaction_count < 0:
+    # validation
+    if any([
+        data.transaction_count < 0,
+        data.total_transaction_amount < 0,
+        data.avg_transaction_amount < 0,
+        data.std_transaction_amount < 0
+    ]):
         raise HTTPException(
             status_code=400,
-            detail="transaction_count cannot be negative"
-        )
-
-    if data.total_transaction_amount < 0:
-        raise HTTPException(
-            status_code=400,
-            detail="total_transaction_amount cannot be negative"
-        )
-
-    if data.avg_transaction_amount < 0:
-        raise HTTPException(
-            status_code=400,
-            detail="avg_transaction_amount cannot be negative"
-        )
-
-    if data.std_transaction_amount < 0:
-        raise HTTPException(
-            status_code=400,
-            detail="std_transaction_amount cannot be negative"
+            detail="Input values cannot be negative"
         )
 
     input_df = pd.DataFrame(
@@ -77,14 +59,8 @@ def predict(data: CustomerData):
     )
 
     try:
-
-        probability = float(
-            model.predict(input_df)[0]
-        )
-
-        prediction = int(
-            probability > 0.30
-        )
+        probability = float(model.predict(input_df)[0])
+        prediction = int(probability > 0.30)
 
         return {
             "risk_probability": probability,
@@ -92,7 +68,6 @@ def predict(data: CustomerData):
         }
 
     except Exception as e:
-
         raise HTTPException(
             status_code=500,
             detail=f"Prediction failed: {e}"
