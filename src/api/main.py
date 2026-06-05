@@ -1,3 +1,5 @@
+import joblib
+
 from fastapi import FastAPI
 import pandas as pd
 import mlflow.pyfunc
@@ -16,9 +18,7 @@ app = FastAPI(title="Credit Risk API")
 # =========================
 MODEL_NAME = "credit_risk_model"
 
-model = mlflow.pyfunc.load_model(
-    model_uri=f"models:/{MODEL_NAME}/latest"
-)
+model = joblib.load("model/model.pkl")  
 
 
 # =========================

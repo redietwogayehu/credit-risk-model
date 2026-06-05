@@ -165,14 +165,22 @@ Tracked items:
 
 ### MLflow Model Registry
 
-The final model is automatically registered in MLflow Model Registry.
+The best-performing model is automatically registered in the MLflow Model Registry after training.
 
-Current versions:
+Registry Features:
 
-* Logistic Regression → Version 3
-* Random Forest → Version 4
+* Automatic model versioning
+* Model governance and traceability
+* Centralized model management
+* Deployment-ready model artifacts
 
-This provides model governance, version control, and deployment traceability.
+Latest Registered Version:
+
+* credit_risk_model → Version 5
+
+The Random Forest model achieved the highest ROC-AUC score (0.7940) and was registered as the production candidate.
+
+The FastAPI application is configured to load the registered MLflow model artifact for inference.
 
 ### Figure 2 — MLflow Experiment Tracking UI
 
@@ -188,23 +196,29 @@ POST /predict
 
 ### Input Example
 
+```json
 {
-"total_transaction_amount": 10000,
-"avg_transaction_amount": 2000,
-"transaction_count": 5,
-"std_transaction_amount": 500
+  "total_transaction_amount": 10000,
+  "avg_transaction_amount": 2000,
+  "transaction_count": 5,
+  "std_transaction_amount": 500
 }
+```
 
 ### Output Example
 
+```json
 {
-"risk_probability": 0.87,
-"is_high_risk": 1
+  "risk_probability": 1,
+  "is_high_risk": 1
 }
+```
 
 ### Run API
 
+```bash
 uvicorn src.api.main:app --reload
+```
 
 ### Figure 3 — FastAPI Swagger UI
 
@@ -212,33 +226,67 @@ reports/figures/api_swagger.png
 
 Open:
 
+```text
 http://127.0.0.1:8000/docs
+```
+
+---
+
+## 🐳 Docker Deployment
+
+The API was containerized using Docker to ensure portability and reproducibility across environments.
+
+### Build Image
+
+```bash
+docker build -t credit-risk-api .
+```
+
+### Run Container
+
+```bash
+docker run -p 8000:8000 credit-risk-api
+```
+
+### Docker Verification
+
+Container successfully built and executed.
+
+Application logs confirmed:
+
+```text
+INFO: Application startup complete.
+INFO: Uvicorn running on http://0.0.0.0:8000
+```
+
+The Swagger UI was accessible through:
+
+```text
+http://localhost:8000/docs
+```
+
+This confirms successful containerized deployment of the credit risk scoring service.
 
 ---
 
 ## 📁 Project Structure
 
+```text
 credit-risk-model/
 
 ├── src/
-
 ├── tests/
-
 ├── data/
-
 ├── notebooks/
-
-├── reports/figures/
-
+├── reports/
+│   └── figures/
 ├── model/
-
+├── mlruns/
 ├── Dockerfile
-
 ├── docker-compose.yml
-
 ├── requirements.txt
-
 └── README.md
+```
 
 ---
 
@@ -252,6 +300,9 @@ credit-risk-model/
 * ROC-AUC = 0.7940
 * F1 Score = 0.6807
 * MLflow Model Registry successfully implemented
+* Registered model versioning enabled (Version 5)
+* FastAPI integrated with MLflow model artifacts
+* Dockerized API deployment successfully verified
 
 ---
 
@@ -277,14 +328,44 @@ credit-risk-model/
 
 ## 🔁 Reproducibility
 
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
+```
 
+Train model:
+
+```bash
 python -m src.train
+```
 
+Run API locally:
+
+```bash
 uvicorn src.api.main:app --reload
+```
+
+Run with Docker:
+
+```bash
+docker build -t credit-risk-api .
+docker run -p 8000:8000 credit-risk-api
+```
 
 ---
 
 ## 🧠 Final Note
 
-This project demonstrates an end-to-end credit risk modeling workflow including behavioral feature engineering, proxy target creation, Information Value analysis, model training, hyperparameter tuning, MLflow experiment tracking, model registry integration, and FastAPI deployment.
+This project delivers a complete end-to-end credit risk modeling solution for alternative data environments, including:
+
+* Behavioral feature engineering
+* RFM-based proxy target creation
+* WoE/IV feature assessment
+* Model training and hyperparameter tuning
+* MLflow experiment tracking
+* MLflow Model Registry integration
+* FastAPI real-time inference API
+* Docker containerization and deployment
+
+The final Random Forest model achieved a ROC-AUC of 0.7940 and was successfully registered, versioned, deployed, and exposed through a production-ready REST API.
