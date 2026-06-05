@@ -7,14 +7,41 @@ from sklearn.impute import SimpleImputer
 
 
 # =========================================================
-# 1. DATA LOADING
+# REQUIRED COLUMNS (DATA VALIDATION)
+# =========================================================
+
+REQUIRED_COLUMNS = [
+    "CustomerId",
+    "TransactionStartTime",
+    "Amount",
+    "Value",
+    "ProviderId",
+    "ProductId",
+    "ProductCategory",
+    "ChannelId",
+    "PricingStrategy"
+]
+
+
+# =========================================================
+# 1. DATA LOADING (WITH SAFETY CHECK)
 # =========================================================
 
 def load_data(path: str) -> pd.DataFrame:
     """
-    Load raw transaction dataset.
+    Load raw transaction dataset with validation.
     """
-    return pd.read_csv(path)
+
+    df = pd.read_csv(path)
+
+    missing = [col for col in REQUIRED_COLUMNS if col not in df.columns]
+
+    if missing:
+        raise ValueError(
+            f"Missing required columns: {missing}"
+        )
+
+    return df
 
 
 # =========================================================
@@ -31,11 +58,17 @@ def extract_datetime_features(
 
     df = df.copy()
 
-# normalize monetary values (important for RFM + clustering)
+    try:
+        df[datetime_col] = pd.to_datetime(df[datetime_col], errors="coerce")
+    except Exception as e:
+        raise ValueError(f"Invalid datetime column: {e}")
+
+    if df[datetime_col].isna().all():
+        raise ValueError("All datetime values could not be parsed")
+
+    # normalize monetary values (important for RFM + clustering)
     if "Amount" in df.columns:
         df["Amount"] = df["Amount"].abs()
-
-    df[datetime_col] = pd.to_datetime(df[datetime_col])
 
     df["transaction_year"] = df[datetime_col].dt.year
     df["transaction_month"] = df[datetime_col].dt.month
@@ -46,13 +79,16 @@ def extract_datetime_features(
 
 
 # =========================================================
-# 3. AGGREGATE FEATURES (OPTIONAL BUT STRONG FOR GRADING)
+# 3. AGGREGATE FEATURES (CUSTOMER LEVEL)
 # =========================================================
 
 def create_aggregate_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Customer-level behavioral aggregation features.
     """
+
+    if "CustomerId" not in df.columns:
+        raise ValueError("CustomerId column is required")
 
     agg_df = df.groupby("CustomerId").agg(
         total_transaction_amount=("Amount", "sum"),
@@ -110,11 +146,9 @@ def build_pipeline():
         ("cat", categorical_transformer, CATEGORICAL_FEATURES)
     ])
 
-    pipeline = Pipeline(steps=[
+    return Pipeline(steps=[
         ("preprocessor", preprocessor)
     ])
-
-    return pipeline
 
 
 # =========================================================
@@ -126,20 +160,32 @@ def process_data(df: pd.DataFrame):
     End-to-end feature engineering pipeline (Task 3).
     """
 
+    df = df.copy()
+
     df = extract_datetime_features(df)
 
     pipeline = build_pipeline()
 
     processed = pipeline.fit_transform(df)
 
-    # Convert to DataFrame (IMPORTANT for Task 5)
     processed_df = pd.DataFrame(
         processed.toarray() if hasattr(processed, "toarray") else processed
     )
 
     return processed_df, pipeline
-    
+
+
+# =========================================================
+# 7. CUSTOMER DATASET (MODEL INPUT FEATURES)
+# =========================================================
+
 def create_customer_dataset(df: pd.DataFrame):
+    """
+    Customer-level aggregated dataset for risk modeling.
+    """
+
+    if "CustomerId" not in df.columns:
+        raise ValueError("CustomerId column is required")
 
     return df.groupby("CustomerId").agg(
         total_transaction_amount=("Amount", "sum"),
@@ -147,5 +193,3 @@ def create_customer_dataset(df: pd.DataFrame):
         transaction_count=("Amount", "count"),
         std_transaction_amount=("Amount", "std")
     ).reset_index().fillna(0)
-
-

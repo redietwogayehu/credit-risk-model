@@ -37,29 +37,63 @@ def home():
 @app.post("/predict")
 def predict(data: CustomerData):
 
-    input_df = pd.DataFrame([[  
-        data.transaction_count,
-        data.total_transaction_amount,
-        data.avg_transaction_amount,
-        data.std_transaction_amount
-    ]], columns=[
-        "transaction_count",
-        "total_transaction_amount",
-        "avg_transaction_amount",
-        "std_transaction_amount"
-    ])
+    if data.transaction_count < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="transaction_count cannot be negative"
+        )
+
+    if data.total_transaction_amount < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="total_transaction_amount cannot be negative"
+        )
+
+    if data.avg_transaction_amount < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="avg_transaction_amount cannot be negative"
+        )
+
+    if data.std_transaction_amount < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="std_transaction_amount cannot be negative"
+        )
+
+    input_df = pd.DataFrame(
+        [[
+            data.transaction_count,
+            data.total_transaction_amount,
+            data.avg_transaction_amount,
+            data.std_transaction_amount
+        ]],
+        columns=[
+            "transaction_count",
+            "total_transaction_amount",
+            "avg_transaction_amount",
+            "std_transaction_amount"
+        ]
+    )
 
     try:
-        probability = model.predict(input_df)[0]
 
-        prediction = int(probability > 0.30)
+        probability = float(
+            model.predict(input_df)[0]
+        )
+
+        prediction = int(
+            probability > 0.30
+        )
 
         return {
-            "risk_probability": float(probability),
+            "risk_probability": probability,
             "is_high_risk": prediction
         }
 
     except Exception as e:
-        return {
-            "error": str(e)
-        }
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Prediction failed: {e}"
+        )
